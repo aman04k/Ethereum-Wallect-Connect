@@ -26,11 +26,22 @@ const walletConnect = new WalletConnectConnector({
 
 const ConnectWallet = () => {
   const [walletAddress, setWalletAddress] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(null);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [provider, setProvider] = useState(null); // Web3 provider state
-  const wsProviderRef = useRef(null); // WebSocket provider reference
+
+  // Function to fetch wallet balance
+  const fetchBalance = async (address) => {
+    try {
+      const web3Provider = new ethers.BrowserProvider(window.ethereum);
+      const balance = await web3Provider.getBalance(address);
+      const formattedBalance = ethers.formatEther(balance); // Convert from wei to ether
+      setWalletBalance(formattedBalance);
+    } catch (err) {
+      console.error("Failed to fetch wallet balance:", err);
+    }
+  };
 
   // Function to connect MetaMask
   const connectMetaMask = async () => {
@@ -41,9 +52,10 @@ const ConnectWallet = () => {
         const accounts = await web3Provider.send("eth_requestAccounts", []);
         const wallet = accounts[0];
         setWalletAddress(wallet);
+        fetchBalance(wallet); // Fetch balance after connecting
         setError(null);
         setShowModal(false); // Close modal
-        alert("connect the metamask")
+        alert("Connected to MetaMask");
       } else {
         setError("MetaMask not detected. Please install MetaMask.");
       }
@@ -54,7 +66,6 @@ const ConnectWallet = () => {
       setLoading(false);
     }
   };
-  
 
   // Function to connect Trust Wallet
   const connectTrustWallet = async () => {
@@ -65,14 +76,15 @@ const ConnectWallet = () => {
         if (!isTrustWallet) {
           throw new Error("Trust Wallet not detected. Please ensure it is installed.");
         }
-  
+
         const web3Provider = new ethers.BrowserProvider(window.ethereum);
         const accounts = await web3Provider.send("eth_requestAccounts", []);
         const wallet = accounts[0];
         setWalletAddress(wallet);
+        fetchBalance(wallet); // Fetch balance after connecting
         setError(null);
         setShowModal(false); // Close modal
-        alert("connect the trust Wallect ")
+        alert("Connected to Trust Wallet");
       } else {
         throw new Error("Ethereum provider not detected. Please install a wallet extension like Trust Wallet.");
       }
@@ -83,7 +95,6 @@ const ConnectWallet = () => {
       setLoading(false);
     }
   };
-  
 
   // Function to connect Coinbase Wallet
   const connectCoinbaseWallet = async () => {
@@ -94,14 +105,15 @@ const ConnectWallet = () => {
         if (!isCoinbaseWallet) {
           throw new Error("Coinbase Wallet not detected. Please ensure it is installed.");
         }
-  
+
         const web3Provider = new ethers.BrowserProvider(window.ethereum);
         const accounts = await web3Provider.send("eth_requestAccounts", []);
         const wallet = accounts[0];
         setWalletAddress(wallet);
+        fetchBalance(wallet); // Fetch balance after connecting
         setError(null);
         setShowModal(false); // Close modal
-        alert("connect the coinbase wallect")
+        alert("Connected to Coinbase Wallet");
       } else {
         throw new Error("Ethereum provider not detected. Please install a wallet extension like Coinbase Wallet.");
       }
@@ -112,40 +124,11 @@ const ConnectWallet = () => {
       setLoading(false);
     }
   };
-  
-
-  // Function to connect Phantom Wallet
-  const connectPhantomWallet = async () => {
-    setLoading(true);
-    try {
-      const provider = window.solana;
-
-      if (provider && provider.isPhantom) {
-        const response = await provider.connect();
-        const wallet = response.publicKey.toString();
-        setWalletAddress(wallet);
-        setError(null);
-        setShowModal(false); // Close modal
-        alert("connect the Phantom Wallect")
-      } else {
-        setError("Phantom Wallet not detected. Please install Phantom Wallet.");
-      }
-    } catch (err) {
-      setError("Failed to connect to Phantom Wallet.");
-      console.error("Phantom Wallet connection error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Function to disconnect the wallet
   const disconnectWallet = () => {
     setWalletAddress(null); // Clear wallet address
-    setProvider(null); // Reset provider
-    if (wsProviderRef.current) {
-      wsProviderRef.current.removeAllListeners(); // Remove WebSocket listeners
-      wsProviderRef.current = null; // Clear WebSocket reference
-    }
+    setWalletBalance(null); // Clear wallet balance
     setError(null); // Clear error messages
   };
 
@@ -171,6 +154,9 @@ const ConnectWallet = () => {
         <div>
           <p>
             <strong>Connected Wallet:</strong> {walletAddress}
+          </p>
+          <p>
+            <strong>Balance:</strong> {walletBalance} ETH
           </p>
           <button
             onClick={disconnectWallet}
@@ -256,20 +242,6 @@ const ConnectWallet = () => {
               }}
             >
               Coinbase Wallet
-            </button>
-            <button
-              onClick={connectPhantomWallet}
-              style={{
-                padding: "10px 20px",
-                margin: "10px 0",
-                background: "#8c52fc",
-                color: "#fff",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-              }}
-            >
-              Phantom Wallet
             </button>
             <button
               onClick={() => setShowModal(false)}
