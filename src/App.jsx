@@ -2,12 +2,14 @@
 
 
 import React from 'react'
-import ConnectWallet from './components/ConnectWallect'
+// import ConnectWallet from './components/ConnectWallect'
+import Wallet from './components/Wallect'
 
 function App() {
   return (
     <div>
-      <ConnectWallet />
+      {/* <ConnectWallet /> */}
+      <Wallet />
     </div>
   )
 }
