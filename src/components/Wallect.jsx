@@ -18,7 +18,7 @@ const injected = new InjectedConnector({
 // WalletConnect Connector configuration for testnet (Rinkeby)
 const walletConnect = new WalletConnectConnector({
   rpc: {
-    4: "https://rinkeby.infura.io/v3/086161f5f17e4e5b87ff17b84f2e6a0c", // Rinkeby Testnet
+    4: "https://rinkeby.infura.io/v3/086161f5f17e4e5b87ff17b84f2e6a0c", 
   },
   bridge: "https://bridge.walletconnect.org",
   qrcode: true,
