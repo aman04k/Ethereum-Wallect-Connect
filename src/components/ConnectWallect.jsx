@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { ethers } from "ethers";
 import { InjectedConnector } from "@web3-react/injected-connector";
 import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { Buffer, process } from "buffer";
 
 // Polyfill Buffer globally (required for WalletConnect)
@@ -31,7 +32,7 @@ const ConnectWallet = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Function to fetch wallet balance
+  // Function to fetch Ethereum wallet balance
   const fetchBalance = async (address) => {
     try {
       const web3Provider = new ethers.BrowserProvider(window.ethereum);
@@ -40,6 +41,18 @@ const ConnectWallet = () => {
       setWalletBalance(formattedBalance);
     } catch (err) {
       console.error("Failed to fetch wallet balance:", err);
+    }
+  };
+
+  // Function to fetch Solana wallet balance
+  const fetchSolanaBalance = async (address) => {
+    try {
+      const connection = new Connection("https://api.mainnet-beta.solana.com");
+      const balance = await connection.getBalance(new PublicKey(address));
+      setWalletBalance((balance / 1e9).toFixed(4)); // Convert lamports to SOL
+    } catch (err) {
+      console.error("Failed to fetch Phantom Wallet balance:", err);
+      setError("Error fetching Phantom Wallet balance.");
     }
   };
 
@@ -72,7 +85,9 @@ const ConnectWallet = () => {
     setLoading(true);
     try {
       if (window.ethereum) {
-        const isTrustWallet = window.ethereum.isTrust || (window.ethereum.providers?.some(provider => provider.isTrust));
+        const isTrustWallet =
+          window.ethereum.isTrust ||
+          (window.ethereum.providers?.some((provider) => provider.isTrust));
         if (!isTrustWallet) {
           throw new Error("Trust Wallet not detected. Please ensure it is installed.");
         }
@@ -86,7 +101,9 @@ const ConnectWallet = () => {
         setShowModal(false); // Close modal
         alert("Connected to Trust Wallet");
       } else {
-        throw new Error("Ethereum provider not detected. Please install a wallet extension like Trust Wallet.");
+        throw new Error(
+          "Ethereum provider not detected. Please install a wallet extension like Trust Wallet."
+        );
       }
     } catch (err) {
       setError(`Failed to connect to Trust Wallet: ${err.message}`);
@@ -101,7 +118,9 @@ const ConnectWallet = () => {
     setLoading(true);
     try {
       if (window.ethereum) {
-        const isCoinbaseWallet = window.ethereum.isCoinbaseWallet || (window.ethereum.providers?.some(provider => provider.isCoinbaseWallet));
+        const isCoinbaseWallet =
+          window.ethereum.isCoinbaseWallet ||
+          (window.ethereum.providers?.some((provider) => provider.isCoinbaseWallet));
         if (!isCoinbaseWallet) {
           throw new Error("Coinbase Wallet not detected. Please ensure it is installed.");
         }
@@ -115,7 +134,9 @@ const ConnectWallet = () => {
         setShowModal(false); // Close modal
         alert("Connected to Coinbase Wallet");
       } else {
-        throw new Error("Ethereum provider not detected. Please install a wallet extension like Coinbase Wallet.");
+        throw new Error(
+          "Ethereum provider not detected. Please install a wallet extension like Coinbase Wallet."
+        );
       }
     } catch (err) {
       setError(`Failed to connect to Coinbase Wallet: ${err.message}`);
@@ -124,6 +145,34 @@ const ConnectWallet = () => {
       setLoading(false);
     }
   };
+
+  // Function to connect Phantom Wallet
+ // Updated Phantom Wallet Connection Function
+const connectPhantomWallet = async () => {
+  setLoading(true);
+  try {
+    const solana = window.solana;
+    if (solana && solana.isPhantom) {
+      const response = await solana.connect();
+      const wallet = response.publicKey.toString();
+      setWalletAddress(wallet);
+
+      // Fetch Ethereum-compatible balance for the wallet
+      fetchBalance(wallet); // Using fetchBalance from Ethereum provider
+      setError(null);
+      setShowModal(false); // Close modal
+      alert("Connected to Phantom Wallet");
+    } else {
+      throw new Error("Phantom Wallet not detected. Please install Phantom Wallet.");
+    }
+  } catch (err) {
+    setError(`Failed to connect to Phantom Wallet: ${err.message}`);
+    console.error("Phantom Wallet connection error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Function to disconnect the wallet
   const disconnectWallet = () => {
@@ -156,7 +205,7 @@ const ConnectWallet = () => {
             <strong>Connected Wallet:</strong> {walletAddress}
           </p>
           <p>
-            <strong>Balance:</strong> {walletBalance} ETH
+            <strong>Balance:</strong> {walletBalance} {walletAddress.startsWith("0x") ? "ETH" : "SOL"}
           </p>
           <button
             onClick={disconnectWallet}
@@ -242,6 +291,20 @@ const ConnectWallet = () => {
               }}
             >
               Coinbase Wallet
+            </button>
+            <button
+              onClick={connectPhantomWallet}
+              style={{
+                padding: "10px 20px",
+                margin: "10px 0",
+                background: "#8c54ff",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              Phantom Wallet
             </button>
             <button
               onClick={() => setShowModal(false)}
